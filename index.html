@@ -24,7 +24,6 @@
 <body>
   <h1>Undead Owlbear State Chart</h1>
   <div id="chart" class="mermaid"></div>
-  <button onclick="window.print()">Print Chart</button>
   
   <script>
     // 1. Initialize Mermaid
@@ -76,5 +75,7 @@ flowchart LR
     chartDiv.textContent = src;
     mermaid.init(undefined, chartDiv);
   </script>
+
+  <button onclick="mermaid.init(undefined, chartDiv);">Reset Chart</button>
 </body>
 </html>
