@@ -24,13 +24,12 @@
 <body>
   <h1>Undead Owlbear State Chart</h1>
   <div id="chart" class="mermaid"></div>
-  <button id="resetBtn">Reset State</button>
   
   <script>
-    // Initialize Mermaid
+    // 1. Initialize Mermaid
     mermaid.initialize({ startOnLoad: false, theme: 'forest' });
 
-    // Map logical states to node IDs
+    // 2. Map our logical states to node IDs
     const nodeFor = {
       feign:      "A",
       examine:    "B",
@@ -43,11 +42,11 @@
       noSurprise: "J"
     };
 
-    // Read desired state from ?state=… (default “feign”)
+    // 3. Read desired state from ?state=… (default “feign”)
     const params = new URLSearchParams(window.location.search);
     const state = params.get("state") || "feign";
 
-    // Build the Mermaid diagram source
+    // 4. Build the Mermaid diagram source
     let src = `
 flowchart LR
   A[Undead Owlbear<br/>Feigning Death] --> B{Do players examine it?}
@@ -61,25 +60,22 @@ flowchart LR
   classDef active fill:#f96,stroke:#333,stroke-width:2px;
 `;
 
-    // Highlight the current state
+    // 5. Highlight the current state
     if (nodeFor[state]) {
       src += `class ${nodeFor[state]} active;\n`;
     }
 
-    // Add click handlers on each node
+    // 6. Add click handlers on each node
     for (let [key, id] of Object.entries(nodeFor)) {
       src += `click ${id} "?state=${key}"\n`;
     }
 
-    // Render into the page
+    // 7. Render into the page
     const chartDiv = document.getElementById('chart');
     chartDiv.textContent = src;
     mermaid.init(undefined, chartDiv);
-
-    // Reset button clears the query and reloads
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      window.location.href = window.location.pathname;
-    });
   </script>
+
+  <button onclick="mermaid.init(undefined, chartDiv);">Reset Chart</button>
 </body>
 </html>
