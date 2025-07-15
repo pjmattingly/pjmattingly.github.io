@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Owlbear State Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+      text-align: center;
+    }
+    #chart {
+      margin: auto;
+      width: 90%;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Undead Owlbear State Chart</h1>
+  <div id="chart" class="mermaid"></div>
+  <button onclick="window.print()">Print Chart</button>
+  
+  <script>
+    // 1. Initialize Mermaid
+    mermaid.initialize({ startOnLoad: false, theme: 'forest' });
+
+    // 2. Map our logical states to node IDs
+    const nodeFor = {
+      feign:      "A",
+      examine:    "B",
+      failure:    "F",
+      success:    "E",
+      provoked:   "G",
+      noAttack:   "H",
+      noExamine:  "C",
+      surprise:   "I",
+      noSurprise: "J"
+    };
+
+    // 3. Read desired state from ?state=… (default “feign”)
+    const params = new URLSearchParams(window.location.search);
+    const state = params.get("state") || "feign";
+
+    // 4. Build the Mermaid diagram source
+    let src = `
+flowchart LR
+  A[Undead Owlbear<br/>Feigning Death] --> B{Do players examine it?}
+  B -- Yes --> D{Investigation/Arcana/Medicine<br/>DC 15}
+  B -- No  --> C[Stays feigning unless provoked] -->|Combat Starts| I[Has Surprise]
+  D -- Failure --> F[Players are fooled] -->|Combat Starts| I
+  D -- Success --> E[Players spot the ruse] --> G[Players attack?]
+  G -- Yes --> J[Combat Starts<br/>No Surprise]
+  G -- No  --> H[Stays feigning until provoked] --> J
+
+  classDef active fill:#f96,stroke:#333,stroke-width:2px;
+`;
+
+    // 5. Highlight the current state
+    if (nodeFor[state]) {
+      src += `class ${nodeFor[state]} active;\n`;
+    }
+
+    // 6. Add click handlers on each node
+    for (let [key, id] of Object.entries(nodeFor)) {
+      src += `click ${id} "?state=${key}"\n`;
+    }
+
+    // 7. Render into the page
+    const chartDiv = document.getElementById('chart');
+    chartDiv.textContent = src;
+    mermaid.init(undefined, chartDiv);
+  </script>
+</body>
+</html>
