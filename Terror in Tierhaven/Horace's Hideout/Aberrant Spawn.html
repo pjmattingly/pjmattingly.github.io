@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Owlbear State Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+      text-align: center;
+    }
+    #chart {
+      margin: auto;
+      width: 90%;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Undead Owlbear State Chart</h1>
+  <div id="chart" class="mermaid"></div>
+  <button id="resetBtn">Reset State</button>
+  
+  <script>
+    // Initialize Mermaid
+    mermaid.initialize({ startOnLoad: false, theme: 'forest' });
+
+    // Map logical states to node IDs
+    const nodeFor = {
+	  hidden_l2:		"ooc_A",
+	  level_is_spawn:	"c_A",
+	  spawn_on_l1:		"c_A1",
+	  spawn_on_l2:		"c_A2",
+	  spawn_see_PC:		"c_B2",
+	  what_level_PC:	"c_C2",
+	  spawn_use_reel:	"c_D2",
+	  spawn_attach:		"c_E2",
+	  minion_trouble:	"c_F2",
+	  spawn_climb_l1:	"c_G2",
+	  spawn_hidden_check:	"c_H2",
+	  hesitation:		"c_I2",
+	  spawn_hide:		"c_J2",
+    };
+
+    // Read desired state from ?state=… (default “feign”)
+    const params = new URLSearchParams(window.location.search);
+    const state = params.get("state") || "feign";
+
+    // Build the Mermaid diagram source
+    let src = `
+flowchart LR
+	%% The spawn starts out "Out of Combat".
+	subgraph "Out of Combat"
+		direction LR
+		ooc_A["Hidden on Level 2, waiting for combat to start"]
+	end
+	
+	%% Spawn entering combat.
+	subgraph "Combat"
+		%% BUG, Have to place these state transition here to put them in the right sub-graph.
+		ooc_A -- Spawn uses 'Reel' to start combat --> c_A1
+		ooc_A -- Minions starts combat --> c_A
+		
+		c_A{"What Level is Spawn on?"} 
+		c_A -- Level 1 --> c_A1
+		c_A -- Level 2 --> c_A2
+		c_A1[Spawn on Level 1] -- Attack --> c_A
+		c_A2[Spawn on Level 2] --> c_B2
+	
+		c_B2{Can the Spawn see a live PC?} -- Yes --> c_C2{What Level is the PC on?} -- Level 1 --> c_D2["Spawn uses 'Reel' attack. (3d6 falling damage + prone)"] --> c_A
+		c_C2 -- Level 2 --> c_E2[Spawn attacks.] --> c_A
+		c_B2 -- No --> c_F2{"Minions in trouble?
+		(If Horace or the Owlbear drops below 25 % HP)"} -- Yes --> c_G2[Climbs to Level 1] --> c_A1
+		c_F2 -- No --> c_H2{Is the Spawn hidden?} 
+		c_H2 -- Yes --> c_I2{"Hesitation mechanic.
+		(Roll 1d6: 1–3 Stays hidden, 4–6 Climbs to Level 1"}
+		c_I2 -- 4–6 --> c_G2
+		c_I2 -- 1-3 --> c_B2
+		c_H2 -- No --> c_J2[Spawn attempts to hide.] --> c_B2
+	end
+
+  classDef active fill:#f96,stroke:#333,stroke-width:2px;
+`;
+
+    // Highlight the current state
+    if (nodeFor[state]) {
+      src += `class ${nodeFor[state]} active;\n`;
+    }
+
+    // Add click handlers on each node
+    for (let [key, id] of Object.entries(nodeFor)) {
+      src += `click ${id} "?state=${key}"\n`;
+    }
+
+    // Render into the page
+    const chartDiv = document.getElementById('chart');
+    chartDiv.textContent = src;
+    mermaid.init(undefined, chartDiv);
+
+    // Reset button clears the query and reloads
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      window.location.href = window.location.pathname;
+    });
+  </script>
+</body>
+</html>
