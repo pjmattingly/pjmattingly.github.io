@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aberrant Spawn State Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+      text-align: center;
+    }
+    #chart {
+      margin: auto;
+      width: 90%;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Aberrant Spawn State Chart</h1>
+  <div id="chart" class="mermaid"></div>
+  <button id="resetBtn">Reset State</button>
+  
+  <script>
+    // Initialize Mermaid
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+
+    // Map logical states to node IDs
+    const nodeFor = {
+	    start_controlled: "cf1",
+      PCs_exmaine:  "cf2",
+      perception_or_medicine: "cf3",
+      horace_pleads:  "cf4",
+      trap_springs: "pf1",
+      corrupted_form: "pf2",
+      combat_start1: "pf3",
+      monster_actions: "pf4",
+      horace_collapse: "ff1",
+      combat_start2: "ff2",
+      wakeup_rounds: "ff3",
+      check_rounds: "ff4",
+      horace_wakeup: "ff5",
+      sever_tendril: "A1",
+    };
+
+    // Read desired state from ?state=… (default “feign”)
+    const params = new URLSearchParams(window.location.search);
+    const state = params.get("state") || "feign";
+
+    // Build the Mermaid diagram source
+    let src = `
+flowchart TD
+	subgraph "Controlled Form"
+	  cf1["Horace: Haggard Villager; (feigns helplessness)"] --> cf2
+	  cf2{Do PCs examine him?} -- Yes --> cf3
+	  cf2{Do PCs examine him?} -- No --> cf4
+	  cf3{Perception DC 15 or Medicine DC 13} -- Success --> A1
+	  cf4["Horace pleads for help; (tendril hidden)"] --> pf1
+	end
+	subgraph "Puppet’s Fury"
+		pf1[Trap Springs / PCs Confront Horace] --> pf2
+		pf2["Horace shifts into Corrupted Form; <br> (Spawn-driven)"] --> pf3
+		pf3["Combat begins <br> (if not already)"] --> A1
+		pf4["Monstrous Actions: shove toward shaft, hurl boulder, fight"] --> A1
+	end
+	subgraph "Freed Form"
+		ff1["Horace collapses unconscious <br> (regains self later)"] --> ff2
+		ff2["Combat begins <br> (if not already)"] --> ff3
+		ff3["Determine how many rounds unconscious <br> (let horace_wakeup = <br> 3 + 1d2-1)"] --> ff4
+	  ff4{"Has it been {horace_wakeup} rounds?"} -- Yes --> ff5
+	  ff4{"Has it been {horace_wakeup} rounds?"} -- No --> ff4
+	  ff5["Horace wakes up; <br> May join fight or cower."]
+	end
+	
+	%% Bug, can't get A1 to appear outside of subgraphs as expected
+	%% see: https://github.com/mermaid-js/mermaid/issues/738
+	A1{Do PCs sever the tendril?} -- Yes --> ff1
+	A1{Do PCs sever the tendril?} -- No --> pf4
+`;
+
+    // Highlight the current state
+    if (nodeFor[state]) {
+      src += `class ${nodeFor[state]} active;\n`;
+    }
+
+    // Add click handlers on each node
+    for (let [key, id] of Object.entries(nodeFor)) {
+      src += `click ${id} "?state=${key}"\n`;
+    }
+
+    // Render into the page
+    const chartDiv = document.getElementById('chart');
+    chartDiv.textContent = src;
+    mermaid.init(undefined, chartDiv);
+
+    // Reset button clears the query and reloads
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      window.location.href = window.location.pathname;
+    });
+  </script>
+</body>
+</html>
